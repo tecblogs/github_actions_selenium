@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Smoke">
+	<listeners>
+		<listener class-name="listeners.ScreenshotListener" />
+	</listeners>
+	<test name="Smoke_Test">
+		<classes>
+			<class name="home.Home_Smoke" />
+			<parameter name="browser" value="chrome" />
+		</classes>
+	</test>
+</suite>
