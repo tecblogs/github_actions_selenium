@@ -1,0 +1,70 @@
+name: UI Automation
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      branch:
+        description: 'Branch to use for test execution'
+        required: true
+        default: 'master'
+
+  schedule:
+    - cron: '30 0 * * 1-5'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo content
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: install python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: install chrome browser
+        run: |
+          sudo apt-get update
+          sudo apt -y --force-yes install fonts-liberation libasound2  libatk-bridge2.0-0 libatk1.0-0  libatspi2.0-0  libcairo2 libcups2 libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 libx11-6 libxcb1 libxcomposite1 libxdamage1 libxext6 libxfixes3 libxkbcommon0 libxrandr2 xdg-utils
+          sudo apt -y --force-yes install wget
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome-stable_current_amd64.deb
+          sudo apt install -f
+      - name: create config file
+        run: |
+          echo "
+          password=${{secrets.password}}
+          username=${{secrets.username}}
+          secret=${{secrets.secret}
+          cp config.properties Config/config.properties
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Cache Maven packages
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Install maven
+        run: |
+          wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz  
+          tar -xf apache-maven-3.8.6-bin.tar.gz
+          sudo mv apache-maven-3.8.6 /opt/
+          sudo ln -s /opt/apache-maven-3.8.6/bin/mvn /usr/bin/mvn
+      - name: execute cam ui tests
+        run: mvn clean test -DtestSuite=TestSuite/smoke.xml,TestSuite/regression.xml
